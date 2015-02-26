@@ -70,4 +70,190 @@ LOCAL_MODULE := libjpeg3
 
 include $(BUILD_SHARED_LIBRARY)
 
+
+######################################################
+###         cjpeg                                  ###
+######################################################
+
+include $(CLEAR_VARS)
+
+# From autoconf-generated Makefile
+cjpeg_SOURCES = cdjpeg.c cjpeg.c rdbmp.c rdgif.c \
+        rdppm.c rdswitch.c rdtarga.c
+
+LOCAL_SRC_FILES:= $(cjpeg_SOURCES)
+
+LOCAL_SHARED_LIBRARIES := libjpeg3
+
+LOCAL_C_INCLUDES := $(LOCAL_PATH) \
+                    $(LOCAL_PATH)/android
+
+LOCAL_CFLAGS := -DBMP_SUPPORTED -DGIF_SUPPORTED -DPPM_SUPPORTED -DTARGA_SUPPORTED \
+         -DANDROID -DANDROID_TILE_BASED_DECODE -DENABLE_ANDROID_NULL_CONVERT
+
+LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLE)
+
+LOCAL_MODULE_TAGS := debug
+
+LOCAL_MODULE := cjpeg
+
+include $(BUILD_EXECUTABLE)
+
+######################################################
+###            djpeg                               ###
+######################################################
+
+include $(CLEAR_VARS)
+
+# From autoconf-generated Makefile
+djpeg_SOURCES = cdjpeg.c djpeg.c rdcolmap.c rdswitch.c \
+        wrbmp.c wrgif.c wrppm.c wrtarga.c
+
+LOCAL_SRC_FILES:= $(djpeg_SOURCES)
+
+LOCAL_SHARED_LIBRARIES := libjpeg3
+
+LOCAL_C_INCLUDES := $(LOCAL_PATH) \
+                    $(LOCAL_PATH)/android
+
+LOCAL_CFLAGS := -DBMP_SUPPORTED -DGIF_SUPPORTED -DPPM_SUPPORTED -DTARGA_SUPPORTED \
+            -DANDROID -DANDROID_TILE_BASED_DECODE -DENABLE_ANDROID_NULL_CONVERT
+
+LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLE)
+
+LOCAL_MODULE_TAGS := debug
+
+LOCAL_MODULE := djpeg
+
+include $(BUILD_EXECUTABLE)
+
+######################################################
+###            jpegtran                            ###
+######################################################
+
+include $(CLEAR_VARS)
+
+# From autoconf-generated Makefile
+jpegtran_SOURCES = jpegtran.c rdswitch.c cdjpeg.c transupp.c
+
+LOCAL_SRC_FILES:= $(jpegtran_SOURCES)
+
+LOCAL_SHARED_LIBRARIES := libjpeg3
+
+LOCAL_C_INCLUDES := $(LOCAL_PATH) \
+                    $(LOCAL_PATH)/android
+
+LOCAL_CFLAGS := -DANDROID -DANDROID_TILE_BASED_DECODE -DENABLE_ANDROID_NULL_CONVERT
+
+LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLE)
+
+LOCAL_MODULE_TAGS := debug
+
+LOCAL_MODULE := jpegtran
+
+include $(BUILD_EXECUTABLE)
+
+######################################################
+###              tjunittest                        ###
+######################################################
+
+include $(CLEAR_VARS)
+
+# From autoconf-generated Makefile
+tjunittest_SOURCES = tjunittest.c tjutil.c
+
+LOCAL_SRC_FILES:= $(tjunittest_SOURCES)
+
+LOCAL_SHARED_LIBRARIES := libjpeg3
+
+LOCAL_C_INCLUDES := $(LOCAL_PATH) 
+
+LOCAL_CFLAGS := -DANDROID -DANDROID_TILE_BASED_DECODE -DENABLE_ANDROID_NULL_CONVERT
+
+LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLE)
+
+LOCAL_MODULE_TAGS := debug
+
+LOCAL_MODULE := tjunittest
+
+include $(BUILD_EXECUTABLE)
+
+######################################################
+###              tjbench                           ###
+######################################################
+
+include $(CLEAR_VARS)
+
+# From autoconf-generated Makefile
+tjbench_SOURCES = tjbench.c bmp.c tjutil.c rdbmp.c rdppm.c \
+        wrbmp.c wrppm.c
+
+LOCAL_SRC_FILES:= $(tjbench_SOURCES)
+
+LOCAL_SHARED_LIBRARIES := libjpeg3
+
+LOCAL_C_INCLUDES := $(LOCAL_PATH) 
+
+LOCAL_CFLAGS := -DBMP_SUPPORTED -DPPM_SUPPORTED \
+         -DANDROID -DANDROID_TILE_BASED_DECODE -DENABLE_ANDROID_NULL_CONVERT
+
+LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLE)
+
+LOCAL_MODULE_TAGS := debug
+
+LOCAL_MODULE := tjbench
+
+include $(BUILD_EXECUTABLE)
+
+######################################################
+###             rdjpgcom                           ###
+######################################################
+
+include $(CLEAR_VARS)
+
+# From autoconf-generated Makefile
+rdjpgcom_SOURCES = rdjpgcom.c
+
+LOCAL_SRC_FILES:= $(rdjpgcom_SOURCES)
+
+LOCAL_SHARED_LIBRARIES := libjpeg3
+
+LOCAL_C_INCLUDES := $(LOCAL_PATH) 
+
+LOCAL_CFLAGS :=  -DANDROID -DANDROID_TILE_BASED_DECODE -DENABLE_ANDROID_NULL_CONVERT
+
+LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLE)
+
+LOCAL_MODULE_TAGS := debug
+
+LOCAL_MODULE := rdjpgcom
+
+include $(BUILD_EXECUTABLE)
+
+######################################################
+###           wrjpgcom                            ###
+######################################################
+
+include $(CLEAR_VARS)
+
+# From autoconf-generated Makefile
+wrjpgcom_SOURCES = wrjpgcom.c
+
+LOCAL_SRC_FILES:= $(wrjpgcom_SOURCES)
+
+LOCAL_SHARED_LIBRARIES := libjpeg3
+
+LOCAL_C_INCLUDES := $(LOCAL_PATH) 
+
+LOCAL_CFLAGS := -DANDROID -DANDROID_TILE_BASED_DECODE -DENABLE_ANDROID_NULL_CONVERT
+
+LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLE)
+
+LOCAL_MODULE_TAGS := debug
+
+LOCAL_MODULE := wrjpgcom
+
+include $(BUILD_EXECUTABLE)
+
+
 endif  # TARGET_SIMULATOR != true
