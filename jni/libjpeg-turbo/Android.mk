@@ -8,7 +8,12 @@ ifneq ($(TARGET_SIMULATOR),true)
 LOCAL_PATH := $(my-dir)
 include $(CLEAR_VARS)
 
-LOCAL_CFLAGS += -D__ARM_HAVE_NEON
+ifeq ($(ARCH_ARM_HAVE_NEON),true)
+LOCAL_CFLAGS += -D__ARM_HAVE_NEON  
+endif
+
+
+$(info LOCAL_CFLAGS is '$(LOCAL_CFLAGS)')
 
 # From autoconf-generated Makefile
 EXTRA_DIST = simd/nasm_lt.sh simd/jcclrmmx.asm simd/jcclrss2.asm simd/jdclrmmx.asm simd/jdclrss2.asm \
@@ -39,7 +44,8 @@ include $(BUILD_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 
 # From autoconf-generated Makefile
-libjpeg_SOURCES_DIST =  example.c jcapimin.c jcapistd.c jccoefct.c jccolor.c \
+libjpeg_SOURCES_DIST =  mywrapper/javamemdst.c mywrapper/javalibjpeg.c \
+		jcapimin.c jcapistd.c jccoefct.c jccolor.c \
         jcdctmgr.c jchuff.c jcinit.c jcmainct.c jcmarker.c jcmaster.c \
         jcomapi.c jcparam.c jcphuff.c jcprepct.c jcsample.c jctrans.c \
         jdapimin.c jdapistd.c jdatadst.c jdatasrc.c jdcoefct.c jdcolor.c \
@@ -65,8 +71,9 @@ LOCAL_CFLAGS := -DAVOID_TABLES  -O0 -fstrict-aliasing -fprefetch-loop-arrays  -D
 LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_STATIC_LIBRARY)
  
 LOCAL_MODULE_TAGS := debug
- 
-LOCAL_MODULE := libjpeg3
+
+$(info LOCAL_CFLAGS is '$(LOCAL_CFLAGS)')
+LOCAL_MODULE := libjpeg
 
 include $(BUILD_SHARED_LIBRARY)
 
@@ -83,7 +90,7 @@ cjpeg_SOURCES = cdjpeg.c cjpeg.c rdbmp.c rdgif.c \
 
 LOCAL_SRC_FILES:= $(cjpeg_SOURCES)
 
-LOCAL_SHARED_LIBRARIES := libjpeg3
+LOCAL_SHARED_LIBRARIES := libjpeg
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
                     $(LOCAL_PATH)/android
@@ -111,7 +118,7 @@ djpeg_SOURCES = cdjpeg.c djpeg.c rdcolmap.c rdswitch.c \
 
 LOCAL_SRC_FILES:= $(djpeg_SOURCES)
 
-LOCAL_SHARED_LIBRARIES := libjpeg3
+LOCAL_SHARED_LIBRARIES := libjpeg
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
                     $(LOCAL_PATH)/android
@@ -138,7 +145,7 @@ jpegtran_SOURCES = jpegtran.c rdswitch.c cdjpeg.c transupp.c
 
 LOCAL_SRC_FILES:= $(jpegtran_SOURCES)
 
-LOCAL_SHARED_LIBRARIES := libjpeg3
+LOCAL_SHARED_LIBRARIES := libjpeg
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
                     $(LOCAL_PATH)/android
@@ -164,7 +171,7 @@ tjunittest_SOURCES = tjunittest.c tjutil.c
 
 LOCAL_SRC_FILES:= $(tjunittest_SOURCES)
 
-LOCAL_SHARED_LIBRARIES := libjpeg3
+LOCAL_SHARED_LIBRARIES := libjpeg
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH) 
 
@@ -190,7 +197,7 @@ tjbench_SOURCES = tjbench.c bmp.c tjutil.c rdbmp.c rdppm.c \
 
 LOCAL_SRC_FILES:= $(tjbench_SOURCES)
 
-LOCAL_SHARED_LIBRARIES := libjpeg3
+LOCAL_SHARED_LIBRARIES := libjpeg
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH) 
 
@@ -216,7 +223,7 @@ rdjpgcom_SOURCES = rdjpgcom.c
 
 LOCAL_SRC_FILES:= $(rdjpgcom_SOURCES)
 
-LOCAL_SHARED_LIBRARIES := libjpeg3
+LOCAL_SHARED_LIBRARIES := libjpeg
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH) 
 
@@ -241,7 +248,7 @@ wrjpgcom_SOURCES = wrjpgcom.c
 
 LOCAL_SRC_FILES:= $(wrjpgcom_SOURCES)
 
-LOCAL_SHARED_LIBRARIES := libjpeg3
+LOCAL_SHARED_LIBRARIES := libjpeg
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH) 
 

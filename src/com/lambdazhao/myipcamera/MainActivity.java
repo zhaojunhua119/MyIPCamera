@@ -2,6 +2,17 @@ package com.lambdazhao.myipcamera;
 
 
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+import com.lambdazhao.myipcamera.libjpeg.JavaLibjpeg;
+
+import com.lambdazhao.myipcamera.libjpeg.CompressJpegParam;
+import com.lambdazhao.myipcamera.libjpeg.JavaLibjpeg.JpegColorSpace;
+import com.lambdazhao.myipcamera.libjpeg.JavaMemDest;
+
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Environment;
@@ -24,7 +35,43 @@ public class MainActivity extends Activity {
 			@Override
 			public void onClick(View v) {
 			
-				test1(Environment.getExternalStorageDirectory().getAbsolutePath()+"/fuck1.jpg");
+				byte array[]=new byte[640*480*3];
+				int k=0;
+				for(int j=0;j<480;j++)
+				{
+					for(int i=0;i<640;i++)
+					{
+						int clr=i*j;
+						
+						array[k++]=(byte) (clr|0xFF);
+						array[k++]=(byte) ((clr>>8)|0xFF);
+						array[k++]=(byte) ((clr>>16)|0xFF);
+						
+					}
+				}
+				JavaMemDest javaMemDest=new JavaMemDest(1000);
+				CompressJpegParam param=new CompressJpegParam();
+				param.width=640;
+				param.height=480;
+				param.in_color_space=JpegColorSpace.JCS_RGB.value;
+				param.inputComponents=3;
+				
+				JavaLibjpeg.compressJpeg(array, javaMemDest,param);
+				File file=new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/fuck1.jpg");
+				
+				FileOutputStream fos;
+				try {
+					fos = new FileOutputStream(file);
+					fos.write(javaMemDest.GetBuffer(),0, javaMemDest.GetOutSize());
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			    
+				//test1(Environment.getExternalStorageDirectory().getAbsolutePath()+"/fuck1.jpg");
 			}
         	
         });
@@ -39,7 +86,7 @@ public class MainActivity extends Activity {
 	}
 	public native void test1(String path);
 	static {
-		System.load("libjpeg3.so");
+		JavaLibjpeg.loadLibrary();
 	}
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
