@@ -9,5 +9,6 @@ public class CompressJpegParam
 	public int inputComponents;
 	public int quality=25;
 	public int in_color_space=JpegColorSpace.JCS_RGB.value;
+	public int row_stride;
 	public CompressJpegParam(){}
 }

@@ -1,5 +1,7 @@
 package com.lambdazhao.myipcamera.libjpeg;
 
+import android.util.Log;
+
 public class JavaMemDest {
 
 	  private byte []buffer=null;
@@ -15,6 +17,7 @@ public class JavaMemDest {
 	  }
 	  public int ResizeBuffer(int newBufSize)
 	  {
+		  Log.d("JavaMemDest","ResizeBuffer oldSize="+buffer.length+" newSize="+newBufSize);
 		  byte[] newBuffer=new byte[newBufSize];
 		  if(buffer!=null)
 			  System.arraycopy(buffer, 0, newBuffer, 0, buffer.length);

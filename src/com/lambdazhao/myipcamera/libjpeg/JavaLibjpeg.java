@@ -3,7 +3,7 @@ package com.lambdazhao.myipcamera.libjpeg;
 public class JavaLibjpeg {
 	public static void loadLibrary()
 	{
-		System.load("libjpeg.so");	
+		System.load("libjpeg3.so");	
 	}
 
 	public enum JpegColorSpace {
@@ -16,7 +16,7 @@ public class JavaLibjpeg {
 		JCS_YCCK,		/* Y/Cb/Cr/K */
 		JCS_EXT_RGB,		/* red/green/blue */
 		JCS_EXT_RGBX,		/* red/green/blue/x */
-		JCS_EXT_BGR,		/* blue/green/red */
+		JCS_EXT_BGR(8),		/* blue/green/red */
 		JCS_EXT_BGRX,		/* blue/green/red/x */
 		JCS_EXT_XBGR,		/* x/blue/green/red */
 		JCS_EXT_XRGB,		/* x/red/green/blue */
@@ -32,7 +32,7 @@ public class JavaLibjpeg {
 		JCS_EXT_ABGR,		/* alpha/blue/green/red */
 		JCS_EXT_ARGB,		/* alpha/red/green/blue */
 		JCS_RGBA_8888,  /* red/green/blue/alpha */
-		JCS_RGB_565;     /* red/green/blue in 565 format */
+		JCS_RGB_565(17);     /* red/green/blue in 565 format */
 	
 		public int value;
 		JpegColorSpace(int value)

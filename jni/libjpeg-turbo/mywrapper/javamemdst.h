@@ -16,6 +16,7 @@ typedef struct {
   boolean alloc;
   JNIEnv * jnienv;
   jobject jobject_ref;
+  jbyteArray byteArray;
 } java_mem_destination_mgr;
 
 typedef java_mem_destination_mgr * java_mem_dest_ptr;

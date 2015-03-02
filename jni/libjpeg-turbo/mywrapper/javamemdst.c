@@ -7,7 +7,7 @@
 #include "jerror.h"
 #include "javamemdst.h"
 
-
+#define DEBUG_TAG "javamemdst"
 LOCAL(void) setJavaRefOutSize(JNIEnv * jnienv,jobject classref,jint size);
 
 LOCAL(void)
@@ -23,6 +23,8 @@ METHODDEF(void)
 init_mem_destination (j_compress_ptr cinfo)
 {
   /* no work necessary here */
+	__android_log_print(ANDROID_LOG_DEBUG, DEBUG_TAG, "%s", "init_mem_destination");
+
 }
 
 
@@ -52,20 +54,24 @@ init_mem_destination (j_compress_ptr cinfo)
 METHODDEF(boolean)
 empty_mem_output_buffer (j_compress_ptr cinfo)
 {
-  int newBufSize;
-  //JOCTET * nextbuffer;
-  java_mem_dest_ptr dest = (java_mem_dest_ptr) cinfo->dest;
-
-  int oldBufSize=dest->bufsize;
-  newBufSize = oldBufSize * 2;
-  //resize the java buffer and reset the dest->buffer and dest->buffSize
-  resizeAndReattachJavaRefBuffer(cinfo,dest,newBufSize);
-
-  dest->pub.next_output_byte = dest->buffer + oldBufSize;
-  dest->pub.free_in_buffer = newBufSize-oldBufSize;
 
 
-  return TRUE;
+	int newBufSize;
+	//JOCTET * nextbuffer;
+	java_mem_dest_ptr dest = (java_mem_dest_ptr) cinfo->dest;
+
+	int oldBufSize=dest->bufsize;
+	newBufSize = oldBufSize * 2;
+	__android_log_print(ANDROID_LOG_DEBUG, DEBUG_TAG, "empty_mem_output_buffer oldSize=%d,newSize=%d", oldBufSize,newBufSize);
+	//resize the java buffer and reset the dest->buffer and dest->buffSize
+	resizeAndReattachJavaRefBuffer(cinfo,dest,newBufSize);
+
+	dest->pub.next_output_byte = dest->buffer + oldBufSize;
+	dest->pub.free_in_buffer = newBufSize-oldBufSize;
+	__android_log_print(ANDROID_LOG_DEBUG, DEBUG_TAG, "empty_mem_output_buffer next_output_byte=%08x, free_in_buffer=%01x",(uint)dest->pub.next_output_byte,(uint)dest->pub.free_in_buffer);
+
+
+	return TRUE;
 }
 
 
@@ -85,6 +91,9 @@ term_mem_destination (j_compress_ptr cinfo)
 
   setJavaRefOutSize(dest->jnienv,dest->jobject_ref,dest->bufsize-dest->pub.free_in_buffer);
   detachJavaRefBuffer(cinfo,dest);
+  __android_log_print(ANDROID_LOG_DEBUG, DEBUG_TAG, "term_mem_destination free_in_buffer=%d",(uint)dest->pub.free_in_buffer);
+
+
 }
 
 
@@ -108,11 +117,14 @@ java_mem_dest(j_compress_ptr cinfo,JNIEnv * jnienv,jobject jobject_ref)
   dest->pub.empty_output_buffer = empty_mem_output_buffer;
   dest->pub.term_destination = term_mem_destination;
   dest->buffer=0;
+  dest->byteArray=0;
   dest->bufsize=0;
   dest->jnienv=jnienv;
   dest->jobject_ref=jobject_ref;
   attachJavaRefBuffer(cinfo,dest);
   dest->pub.free_in_buffer = dest->bufsize;
+  dest->pub.next_output_byte = dest->buffer;
+  __android_log_print(ANDROID_LOG_DEBUG, DEBUG_TAG, "java_mem_dest next_output_byte=%08x",(uint)dest->pub.next_output_byte);
 
 }
 
@@ -120,29 +132,33 @@ LOCAL(void) setJavaRefOutSize(JNIEnv * jnienv,jobject classref,jint size)
 {
 	jclass jc = (*jnienv)->GetObjectClass(jnienv,classref);
 	jmethodID mid = (*jnienv)->GetMethodID(jnienv,jc, "SetOutSize","(I)V");
-	(*jnienv)->CallObjectMethod(jnienv,classref, mid,size);
+	(*jnienv)->CallVoidMethod(jnienv,classref, mid,size);
+	(*jnienv)->DeleteLocalRef(jnienv,jc);
+
 
 }
 //jni wrapper
 
 LOCAL(jbyte*)
-lockJavaRefBuffer(JNIEnv * jnienv,jobject classref,jboolean *isCopy,jsize *bufSize)
+lockJavaRefBuffer(JNIEnv * jnienv,jobject classref,jboolean *isCopy,jsize *bufSize,jbyteArray *byteArray)
 {
 	jclass jc = (*jnienv)->GetObjectClass(jnienv,classref);
 	jmethodID mid = (*jnienv)->GetMethodID(jnienv,jc, "GetBuffer","()[B");
-	jbyteArray byteArray = (jbyteArray)(*jnienv)->CallObjectMethod(jnienv,classref, mid);
-	*bufSize=(*jnienv)->GetArrayLength(jnienv, byteArray);
-	jbyte* buffer = (*jnienv)->GetByteArrayElements(jnienv,classref,isCopy);
+	*byteArray = (jbyteArray)(*jnienv)->CallObjectMethod(jnienv,classref, mid);
+	*bufSize=(*jnienv)->GetArrayLength(jnienv, *byteArray);
+	jbyte* buffer = (*jnienv)->GetByteArrayElements(jnienv,*byteArray,isCopy);
+	(*jnienv)->DeleteLocalRef(jnienv,jc);
+	__android_log_print(ANDROID_LOG_DEBUG, DEBUG_TAG, "lockJavaRefBuffer byteArray=%08x,buffer=%08x",(uint)*byteArray,(uint)buffer);
 	return buffer;
 }
 //jni wrapper
 LOCAL(void)
-unlockJavaRefBuffer(JNIEnv * jnienv,jobject classref,jbyte *buffer)
+unlockJavaRefBuffer(JNIEnv * jnienv,jbyteArray byteArray,jbyte *buffer)
 {
-	jclass jc = (*jnienv)->GetObjectClass(jnienv,classref);
-	jmethodID mid = (*jnienv)->GetMethodID(jnienv,jc, "GetBuffer","()[B");
-	jbyteArray byteArray = (jbyteArray)(*jnienv)->CallObjectMethod(jnienv,classref, mid);
+	__android_log_print(ANDROID_LOG_DEBUG, DEBUG_TAG, "unlockJavaRefBuffer byteArray=%08x,buffer=%08x",(uint)byteArray,(uint)buffer);
+
 	(*jnienv)->ReleaseByteArrayElements(jnienv,byteArray,buffer,0);
+
 
 }
 LOCAL(void)
@@ -151,10 +167,21 @@ attachJavaRefBuffer(j_compress_ptr cinfo,java_mem_dest_ptr dest)
 	if(dest->buffer!=NULL)
 		ERREXIT(cinfo, JERR_BUFFER_SIZE);
 	jboolean isCopy=0;
-	jbyte *buffer=lockJavaRefBuffer(dest->jnienv,dest->jobject_ref,&isCopy,&(dest->bufsize));
+	jbyteArray byteArray=0;
+
+	int i=0;
+	jbyte *buffer=lockJavaRefBuffer(dest->jnienv,dest->jobject_ref,&isCopy,&(dest->bufsize),&byteArray);
+
+	__android_log_print(ANDROID_LOG_DEBUG, DEBUG_TAG, "attachJavaRefBuffer bufSize=%d",dest->bufsize);
+
 	if(isCopy!=0)
-		ERREXIT(cinfo, JERR_BUFFER_SIZE);
+		__android_log_print(ANDROID_LOG_DEBUG, DEBUG_TAG, "attachJavaRefBuffer isCopy=true");
+		//ERREXIT(cinfo, JERR_BUFFER_SIZE);
 	dest->buffer=buffer;
+	dest->byteArray=byteArray;
+
+
+
 }
 
 LOCAL(void)
@@ -162,19 +189,26 @@ detachJavaRefBuffer(j_compress_ptr cinfo,java_mem_dest_ptr dest)
 {
 	if(dest->buffer!=NULL)
 	{
-		unlockJavaRefBuffer(dest->jnienv,dest->jobject_ref,dest->buffer);
+		__android_log_print(ANDROID_LOG_DEBUG, DEBUG_TAG, "detachJavaRefBuffer");
+
+		unlockJavaRefBuffer(dest->jnienv,dest->byteArray,dest->buffer);
 		dest->buffer=NULL;
+		dest->byteArray=NULL;
 	}
 }
 
 LOCAL(void)
-resizeAndReattachJavaRefBuffer(j_compress_ptr cinfo,java_mem_dest_ptr dest,int newSize)
+resizeAndReattachJavaRefBuffer(j_compress_ptr cinfo,java_mem_dest_ptr dest,jint newSize)
 {
+	int oldSize=dest->bufsize;
 	detachJavaRefBuffer(cinfo,dest);
 	JNIEnv * jnienv=dest->jnienv;
 	jclass jc = (*jnienv)->GetObjectClass(jnienv,dest->jobject_ref);
 	jmethodID mid = (*jnienv)->GetMethodID(jnienv,jc, "ResizeBuffer","(I)I");
-	jint result = (jint)(*jnienv)->CallObjectMethod(jnienv,dest->jobject_ref, mid,newSize);
+	__android_log_print(ANDROID_LOG_DEBUG, DEBUG_TAG, "resizeAndReattachJavaRefBuffer oldSize=%d, newSize=%d",oldSize,newSize);
+	jint result = (jint)(*jnienv)->CallIntMethod(jnienv,dest->jobject_ref, mid,newSize);
+	(*jnienv)->DeleteLocalRef(jnienv,jc);
+
 	if(result!=0)
 		ERREXIT(cinfo, JERR_BUFFER_SIZE);
 
