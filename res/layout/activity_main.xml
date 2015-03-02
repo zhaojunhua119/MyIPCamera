@@ -18,4 +18,9 @@
         android:layout_marginTop="52dp"
         android:text="Button" />
 
+    <TextureView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/surface_view" />
+
 </RelativeLayout>

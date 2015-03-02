@@ -44,7 +44,7 @@ include $(BUILD_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 
 # From autoconf-generated Makefile
-libjpeg_SOURCES_DIST =  mywrapper/javamemdst.c mywrapper/javalibjpeg.c \
+libjpeg_SOURCES_DIST = mywrapper/mycolorconverter.c mywrapper/javamemdst.c mywrapper/javalibjpeg.c \
 		jcapimin.c jcapistd.c jccoefct.c jccolor.c \
         jcdctmgr.c jchuff.c jcinit.c jcmainct.c jcmarker.c jcmaster.c \
         jcomapi.c jcparam.c jcphuff.c jcprepct.c jcsample.c jctrans.c \
@@ -65,7 +65,7 @@ LOCAL_LDLIBS := -llog
  
 LOCAL_C_INCLUDES := $(LOCAL_PATH) 
  
-LOCAL_CFLAGS := -DAVOID_TABLES  -O0 -fstrict-aliasing -fprefetch-loop-arrays  -DANDROID \
+LOCAL_CFLAGS := -DAVOID_TABLES  -O3 -fstrict-aliasing -fprefetch-loop-arrays  -DANDROID \
         -DANDROID_TILE_BASED_DECODE -DENABLE_ANDROID_NULL_CONVERT
 
 LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_STATIC_LIBRARY)

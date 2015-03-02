@@ -56,53 +56,57 @@ public class MainActivity extends Activity implements Camera.PreviewCallback {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-
+	     mPreview = (TextureView) findViewById(R.id.surface_view);
+	     
 		btnTrigger=(Button)this.findViewById(R.id.btnTrigger);
 		btnTrigger.setOnClickListener(new OnClickListener(){
 
 			@Override
 			public void onClick(View v) {
 			
-				byte array[]=new byte[640*480*3];
-				int k=0;
-				for(int j=0;j<480;j++)
-				{
-					for(int i=0;i<640;i++)
-					{
-						int clr=i*j;
-						
-						array[k++]=(byte) (clr&0xFF);
-						array[k++]=(byte) ((clr>>8)&0xFF);
-						array[k++]=(byte) ((clr>>16)&0xFF);
-						
-					}
-				}
-				JavaMemDest javaMemDest=new JavaMemDest(10000);
-				CompressJpegParam param=new CompressJpegParam();
-				param.width=640;
-				param.height=480;
-				param.in_color_space=JpegColorSpace.JCS_EXT_BGR.value;
-				param.inputComponents=3;
-				param.quality=90;
-				//for(int i=0;i<100;i++)
-				{
-					JavaLibjpeg.compressJpeg(array, javaMemDest,param);
-				}
-				File file=new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/fuck1.jpg");
-				
-				FileOutputStream fos;
-				try {
-					fos = new FileOutputStream(file);
-					fos.write(javaMemDest.GetBuffer(),0, javaMemDest.GetOutSize());
-				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			    
-				//test1(Environment.getExternalStorageDirectory().getAbsolutePath()+"/fuck1.jpg");
+				 new MediaPrepareTask().execute(null, null, null);
+//
+//				
+//				byte array[]=new byte[640*480*3];
+//				int k=0;
+//				for(int j=0;j<480;j++)
+//				{
+//					for(int i=0;i<640;i++)
+//					{
+//						int clr=i*j;
+//						
+//						array[k++]=(byte) (clr&0xFF);
+//						array[k++]=(byte) ((clr>>8)&0xFF);
+//						array[k++]=(byte) ((clr>>16)&0xFF);
+//						
+//					}
+//				}
+//				JavaMemDest javaMemDest=new JavaMemDest(10000);
+//				CompressJpegParam param=new CompressJpegParam();
+//				param.width=640;
+//				param.height=480;
+//				param.in_color_space=JpegColorSpace.JCS_EXT_BGR.value;
+//				param.inputComponents=3;
+//				param.quality=90;
+//				//for(int i=0;i<100;i++)
+//				{
+//					JavaLibjpeg.compressJpeg(array, javaMemDest,param);
+//				}
+//				File file=new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/fuck1.jpg");
+//				
+//				FileOutputStream fos;
+//				try {
+//					fos = new FileOutputStream(file);
+//					fos.write(javaMemDest.GetBuffer(),0, javaMemDest.GetOutSize());
+//				} catch (FileNotFoundException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				} catch (IOException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//			    
+//				//test1(Environment.getExternalStorageDirectory().getAbsolutePath()+"/fuck1.jpg");
 			}
         	
         });
@@ -110,19 +114,20 @@ public class MainActivity extends Activity implements Camera.PreviewCallback {
 	}
 	Camera.Parameters parameters;
 	CamcorderProfile profile ;
+	int convertBuffer=0;
     private boolean prepareVideoRecorder() throws IOException {
        
-//        try {
-//            socket=new ServerSocket(8081);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        client=socket.accept();
-//        PrintWriter pw = new PrintWriter(client.getOutputStream());
-//        pw.print("HTTP/1.1 " + 200 + " \r\n");
-//        pw.print("Connection: close\r\n");
-//        pw.write("Content-Type: multipart/x-mixed-replace;boundary=Ba4oTvQMY8ew04N8dcnM\r\n");
-//        pw.flush();
+        try {
+            socket=new ServerSocket(8081);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        client=socket.accept();
+        PrintWriter pw = new PrintWriter(client.getOutputStream());
+        pw.print("HTTP/1.1 " + 200 + " \r\n");
+        pw.print("Connection: close\r\n");
+        pw.write("Content-Type: multipart/x-mixed-replace;boundary=Ba4oTvQMY8ew04N8dcnM\r\n");
+        pw.flush();
         // BEGIN_INCLUDE (configure_preview)
         mCamera = CameraHelper.getDefaultCameraInstance();
 
@@ -130,23 +135,32 @@ public class MainActivity extends Activity implements Camera.PreviewCallback {
         // camera. Query camera to find all the sizes and choose the optimal size given the
         // dimensions of our preview surface.
         parameters = mCamera.getParameters();
+        
         List<Camera.Size> mSupportedPreviewSizes = parameters.getSupportedPreviewSizes();
         Camera.Size optimalSize = CameraHelper.getOptimalPreviewSize(mSupportedPreviewSizes,
                 mPreview.getWidth(), mPreview.getHeight());
 
         // Use the same size for recording profile.
         profile = CamcorderProfile.get(CamcorderProfile.QUALITY_LOW);
-    //   profile.videoFrameWidth = optimalSize.width;
-      //  profile.videoFrameHeight = optimalSize.height;
+        profile.videoFrameWidth = 720;
+        profile.videoFrameHeight = 480;
 
 
         // likewise for the camera object itself.
         parameters.setPreviewSize(profile.videoFrameWidth, profile.videoFrameHeight);
         List<int[]> mSupportedPreviewFPS=parameters.getSupportedPreviewFpsRange();
-        parameters.setPreviewFpsRange(30000,30000);
-        parameters.setPreviewFormat(ImageFormat.RGB_565);
+        parameters.setPreviewFpsRange(15000,15000);
+        parameters.setPreviewFormat(ImageFormat.NV21);
+        List<Integer> wt= parameters.getSupportedPreviewFormats();
+        convertBuffer=JavaLibjpeg.newBuffer(profile.videoFrameWidth*profile.videoFrameHeight*3);
+        try{
         mCamera.setParameters(parameters);
-
+        mCamera.setDisplayOrientation(90);
+        }
+        catch (Exception e)
+        {
+        	e.printStackTrace();
+        }
         int size = profile.videoFrameWidth * profile.videoFrameHeight *
                 ImageFormat.getBitsPerPixel(parameters.getPreviewFormat()) / 8;
         mBuffer = new byte[size];
@@ -272,46 +286,45 @@ public class MainActivity extends Activity implements Camera.PreviewCallback {
 	   
 		
 		CompressJpegParam param=new CompressJpegParam();
-		param.width=640;
-		param.height=480;
-		param.in_color_space=JpegColorSpace.JCS_RGB_565.value;
+		param.width=profile.videoFrameWidth;
+		param.height=profile.videoFrameHeight;
+		param.in_color_space=JpegColorSpace.JCS_NV12.value;
 		param.inputComponents=3;
 		param.quality=25;
-		param.row_stride=profile.videoFrameWidth *
-                ImageFormat.getBitsPerPixel(parameters.getPreviewFormat()) / 8;
-		
+		param.row_stride=profile.videoFrameWidth ;
+		param.image_convert_buffer=convertBuffer;
 		JavaLibjpeg.compressJpeg(data, javaMemDest,param);
 		
-		File file=new File(Environment.getExternalStorageDirectory().getAbsolutePath()+String.format("test/fuck%04d.jpg",count));
+	//	File file=new File(Environment.getExternalStorageDirectory().getAbsolutePath()+String.format("/test/fuck%04d.jpg",count++));
 		
-		FileOutputStream fos;
-		try {
-			fos = new FileOutputStream(file);
-			fos.write(javaMemDest.GetBuffer(),0, javaMemDest.GetOutSize());
-			fos.close();
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-//		
-//        byte[] tmp=output_stream.toByteArray();
-//        try {
-//            PrintWriter pw=new PrintWriter(client.getOutputStream());
-//            pw.write("\r\n--Ba4oTvQMY8ew04N8dcnM\r\nContent-Type: image/jpeg\r\n\r\n");
-//        pw.flush();
-//        client.getOutputStream().write(tmp);
-//        //outStream.write(tmp);
-//        //outStream.flush();
-//        }catch (Exception ex)
-//	    {
-//	        Log.d("fuck",ex.getMessage());
-//	    }
+	//	FileOutputStream fos;
+//		try {
+//			fos = new FileOutputStream(file);
+//			fos.write(javaMemDest.GetBuffer(),0, javaMemDest.GetOutSize());
+//			fos.close();
+//		} catch (FileNotFoundException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+		
+        byte[] tmp=javaMemDest.GetBuffer();
+        try {
+            PrintWriter pw=new PrintWriter(client.getOutputStream());
+            pw.write("\r\n--Ba4oTvQMY8ew04N8dcnM\r\nContent-Type: image/jpeg\r\n\r\n");
+        pw.flush();
+        client.getOutputStream().write(tmp);
+        //outStream.write(tmp);
+        //outStream.flush();
+        }catch (Exception ex)
+	    {
+	        Log.d("fuck",ex.getMessage());
+	    }
 	    camera.addCallbackBuffer(data);
 //	    System.gc();
-	    Log.d(TAG,"onPreviewFrame - wrote bytes: " + javaMemDest.GetOutSize());
+//	    Log.d(TAG,"onPreviewFrame - wrote bytes: " + javaMemDest.GetOutSize());
    }
    
 

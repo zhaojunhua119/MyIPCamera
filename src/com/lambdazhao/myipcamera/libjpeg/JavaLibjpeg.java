@@ -8,7 +8,7 @@ public class JavaLibjpeg {
 
 	public enum JpegColorSpace {
 		JCS_UNKNOWN,		/* error/unspecified */
-		JCS_GRAYSCALE,		/* monochrome */
+		JCS_GRAYSCALE(1),		/* monochrome */
 		JCS_RGB(2),		/* red/green/blue as specified by the RGB_RED, RGB_GREEN,
 					   RGB_BLUE, and RGB_PIXELSIZE macros */
 		JCS_YCbCr(3),		/* Y/Cb/Cr (also known as YUV) */
@@ -32,8 +32,8 @@ public class JavaLibjpeg {
 		JCS_EXT_ABGR,		/* alpha/blue/green/red */
 		JCS_EXT_ARGB,		/* alpha/red/green/blue */
 		JCS_RGBA_8888,  /* red/green/blue/alpha */
-		JCS_RGB_565(17);     /* red/green/blue in 565 format */
-	
+		JCS_RGB_565(17),     /* red/green/blue in 565 format */
+		JCS_NV12(1000);
 		public int value;
 		JpegColorSpace(int value)
 		{
@@ -46,4 +46,7 @@ public class JavaLibjpeg {
 		
 	}
 	public static native void compressJpeg(byte[] imageBuffer,JavaMemDest javaMemDest,CompressJpegParam param);
+	public static native int newBuffer(int size);
+	public static native int deleteBuffer(int bufferPointer);
+	
 }
