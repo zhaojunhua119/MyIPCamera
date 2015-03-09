@@ -10,8 +10,13 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.lambdazhao.common.NetworkProfiler;
+import com.lambdazhao.common.TimeProfile;
 import com.lambdazhao.common.media.CameraHelper;
+import com.lambdazhao.common.media.DropFrameNetworkBufferManager;  
+import com.lambdazhao.common.media.DropFrameThreadPool;
 import com.lambdazhao.myipcamera.libjpeg.JavaLibjpeg;
 
 import com.lambdazhao.myipcamera.libjpeg.CompressJpegParam;
@@ -47,11 +52,12 @@ public class MainActivity extends Activity implements Camera.PreviewCallback {
     private boolean isRecording = false;
     private static final String TAG = "Recorder";
     private Button captureButton;
-    private byte[] mBuffer=null;
+    private ConcurrentLinkedQueue<byte[]> mBuffer=null;
+    private int concurrentNum=4;
 
-    ServerSocket socket =null;
-    Socket client=null;
-	
+    DropFrameThreadPool compressPool=new DropFrameThreadPool("compressPool",concurrentNum,concurrentNum);
+    DropFrameNetworkBufferManager networkBufferManager=new DropFrameNetworkBufferManager(1);
+    NetworkStreamingServer networkStreamingServer=new NetworkStreamingServer(networkBufferManager);
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -114,21 +120,28 @@ public class MainActivity extends Activity implements Camera.PreviewCallback {
 	}
 	Camera.Parameters parameters;
 	CamcorderProfile profile ;
-	int convertBuffer=0;
+	ThreadLocal<Integer>  convertBuffer=new ThreadLocal<Integer>()
+			{
+			    protected Integer initialValue() {
+			        return JavaLibjpeg.newBuffer(profile.videoFrameWidth*profile.videoFrameHeight*3);
+			    }
+			};
     private boolean prepareVideoRecorder() throws IOException {
        
-        try {
-            socket=new ServerSocket(8081);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        client=socket.accept();
-        PrintWriter pw = new PrintWriter(client.getOutputStream());
-        pw.print("HTTP/1.1 " + 200 + " \r\n");
-        pw.print("Connection: close\r\n");
-        pw.write("Content-Type: multipart/x-mixed-replace;boundary=Ba4oTvQMY8ew04N8dcnM\r\n");
-        pw.flush();
+//        try {
+//            socket=new ServerSocket(8081);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        client=socket.accept();
+//        PrintWriter pw = new PrintWriter(client.getOutputStream());
+//        pw.print("HTTP/1.1 " + 200 + " \r\n");
+//        pw.print("Connection: close\r\n");
+//        pw.write("Content-Type: multipart/x-mixed-replace;boundary=Ba4oTvQMY8ew04N8dcnM\r\n");
+//        pw.flush();
         // BEGIN_INCLUDE (configure_preview)
+    	networkStreamingServer.start();
+    	
         mCamera = CameraHelper.getDefaultCameraInstance();
 
         // We need to make sure that our preview and recording video size are supported by the
@@ -142,17 +155,18 @@ public class MainActivity extends Activity implements Camera.PreviewCallback {
 
         // Use the same size for recording profile.
         profile = CamcorderProfile.get(CamcorderProfile.QUALITY_LOW);
-        profile.videoFrameWidth = 720;
-        profile.videoFrameHeight = 480;
+        profile.videoFrameWidth = 1280;
+        profile.videoFrameHeight = 720;
 
 
         // likewise for the camera object itself.
         parameters.setPreviewSize(profile.videoFrameWidth, profile.videoFrameHeight);
         List<int[]> mSupportedPreviewFPS=parameters.getSupportedPreviewFpsRange();
-        parameters.setPreviewFpsRange(15000,15000);
+        parameters.setPreviewFpsRange(24000,24000);
         parameters.setPreviewFormat(ImageFormat.NV21);
+
         List<Integer> wt= parameters.getSupportedPreviewFormats();
-        convertBuffer=JavaLibjpeg.newBuffer(profile.videoFrameWidth*profile.videoFrameHeight*3);
+      //  convertBuffer=JavaLibjpeg.newBuffer(profile.videoFrameWidth*profile.videoFrameHeight*3);
         try{
         mCamera.setParameters(parameters);
         mCamera.setDisplayOrientation(90);
@@ -163,8 +177,12 @@ public class MainActivity extends Activity implements Camera.PreviewCallback {
         }
         int size = profile.videoFrameWidth * profile.videoFrameHeight *
                 ImageFormat.getBitsPerPixel(parameters.getPreviewFormat()) / 8;
-        mBuffer = new byte[size];
-        mCamera.addCallbackBuffer(mBuffer);
+        mBuffer = new ConcurrentLinkedQueue<byte[]>();
+        for(int i=0;i<concurrentNum+5;i++)
+        {
+        	mBuffer.add(new byte[size]);
+        }
+        mCamera.addCallbackBuffer(mBuffer.poll());
         mCamera.setPreviewCallbackWithBuffer(this);
         try {
                 // Requires API level 11+, For backward compatibility use {@link setPreviewDisplay}
@@ -279,52 +297,59 @@ public class MainActivity extends Activity implements Camera.PreviewCallback {
 		}
 		return super.onOptionsItemSelected(item);
 	}
-	JavaMemDest javaMemDest=new JavaMemDest(10000);
-	int count=0;
+	 
+	int count=0;	
+	TimeProfile profileFrame=null;
    @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
 	   
+		if(profileFrame!=null)
+			profileFrame.End();
+
+		profileFrame=TimeProfile.Start("MyIpCamera", "frameBetween");
+
+		final byte[] buffer=data;
 		
-		CompressJpegParam param=new CompressJpegParam();
-		param.width=profile.videoFrameWidth;
-		param.height=profile.videoFrameHeight;
-		param.in_color_space=JpegColorSpace.JCS_NV12.value;
-		param.inputComponents=3;
-		param.quality=25;
-		param.row_stride=profile.videoFrameWidth ;
-		param.image_convert_buffer=convertBuffer;
-		JavaLibjpeg.compressJpeg(data, javaMemDest,param);
-		
-	//	File file=new File(Environment.getExternalStorageDirectory().getAbsolutePath()+String.format("/test/fuck%04d.jpg",count++));
-		
-	//	FileOutputStream fos;
-//		try {
-//			fos = new FileOutputStream(file);
-//			fos.write(javaMemDest.GetBuffer(),0, javaMemDest.GetOutSize());
-//			fos.close();
-//		} catch (FileNotFoundException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-		
-        byte[] tmp=javaMemDest.GetBuffer();
-        try {
-            PrintWriter pw=new PrintWriter(client.getOutputStream());
-            pw.write("\r\n--Ba4oTvQMY8ew04N8dcnM\r\nContent-Type: image/jpeg\r\n\r\n");
-        pw.flush();
-        client.getOutputStream().write(tmp);
-        //outStream.write(tmp);
-        //outStream.flush();
-        }catch (Exception ex)
-	    {
-	        Log.d("fuck",ex.getMessage());
-	    }
-	    camera.addCallbackBuffer(data);
-//	    System.gc();
-//	    Log.d(TAG,"onPreviewFrame - wrote bytes: " + javaMemDest.GetOutSize());
+		boolean isScheduled=compressPool.Schedule(new Runnable(){
+			@Override
+			public void run() {
+				Log.d("MyIpCamera","srcbuffer using"+buffer.hashCode());
+				CompressJpegParam param=new CompressJpegParam();
+				param.width=profile.videoFrameWidth;
+				param.height=profile.videoFrameHeight;
+				param.in_color_space=JpegColorSpace.JCS_NV12.value;
+				param.inputComponents=3;
+				param.quality=25;
+				param.row_stride=profile.videoFrameWidth ;
+				param.image_convert_buffer=convertBuffer.get();
+				TimeProfile profileCompress=TimeProfile.Start("MyIpCamera", "jpegCompress");
+				JavaMemDest javaMemDest=networkBufferManager.GetWriteBuffer();
+				JavaLibjpeg.compressJpeg(buffer, javaMemDest,param);
+				try {
+					networkBufferManager.ScheduleWriteBuffer();
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					Log.d("MyIpCamera","ScheduleWriteBuffer Error");
+				}
+				profileCompress.End();
+				
+				Log.d("MyIpCamera","srcbuffer pushback"+buffer.hashCode());
+				mBuffer.add(buffer);
+			}
+		});
+		if(!isScheduled)
+		{
+			
+			mBuffer.add(buffer);
+		}
+
+        
+        byte[] nextBuffer=mBuffer.poll();
+        if(nextBuffer==null)
+        	Log.e("MyIpCamera","warning: null buffer!");
+        Log.d("MyIpCamera","srcbuffer addCallbackBuffer"+buffer.hashCode());
+	    camera.addCallbackBuffer(nextBuffer);
+
    }
    
 

@@ -7,7 +7,7 @@
 #include "jerror.h"
 #include "javamemdst.h"
 
-#define DEBUG_TAG "javamemdst"
+#define DEBUG_TAG "MyIpCamera"
 LOCAL(void) setJavaRefOutSize(JNIEnv * jnienv,jobject classref,jint size);
 
 LOCAL(void)

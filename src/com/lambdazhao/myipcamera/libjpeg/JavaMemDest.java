@@ -11,6 +11,10 @@ public class JavaMemDest {
 	  {
 		  buffer=new byte[size];
 	  }
+	  public JavaMemDest()
+	  {
+		  buffer=new byte[100];
+	  }
 	  public byte[] GetBuffer()
 	  {
 		  return buffer;

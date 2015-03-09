@@ -3,6 +3,25 @@
 #include "jerror.h"
 #include "mycolorconverter.h"
 
+void nv12_yu12_convert(JSAMPLE* src,JSAMPLE *dst,JSAMPLE **ypointer,JSAMPLE **upointer,JSAMPLE **vpointer, int width,int height)
+{
+	int pixelSum=width*height;
+	JSAMPLE *nsrc=src+pixelSum;
+	(*ypointer)=src;
+	JSAMPLE *nendsrc=nsrc+pixelSum/2;
+
+	JSAMPLE *udst=dst;
+	(*upointer)=udst;
+	JSAMPLE *vdst=dst+pixelSum/4;
+	(*vpointer)=vdst;
+	while(nsrc<nendsrc)
+	{
+		*(vdst++)=*(nsrc++);
+		*(udst++)=*(nsrc++);
+	}
+
+}
+
 void nv12_yuv_convert(JSAMPLE* src,JSAMPLE *dst,int width,int height)
 {
 	//http://stackoverflow.com/questions/5272388/extract-black-and-white-image-from-android-cameras-nv21-format
